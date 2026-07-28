@@ -9,6 +9,7 @@ on:
     paths:
       - .build/index.html.gz.b64
       - .build/style.css.gz.b64
+      - .build/slides.js.gz.b64
 
 permissions:
   contents: write
@@ -21,20 +22,21 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Materialize final HTML and CSS
+      - name: Materialize final presentation source
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p assets
           base64 -d .build/index.html.gz.b64 | gzip -d > index.html
           base64 -d .build/style.css.gz.b64 | gzip -d > assets/style.css
-      - name: Commit final density fixes
+          base64 -d .build/slides.js.gz.b64 | gzip -d > assets/slides.js
+      - name: Commit materialized presentation
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html assets/style.css
+          git add index.html assets/style.css assets/slides.js
           if git diff --cached --quiet; then exit 0; fi
-          git commit -m 'Polish dense presentation slides'
+          git commit -m 'Expand symbols, typography, and proof appendix'
           git push origin HEAD:main
