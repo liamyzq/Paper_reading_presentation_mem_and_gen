@@ -1,0 +1,181 @@
+name: Build and QA HTML presentation
+
+on:
+  workflow_dispatch:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    if: github.event_name == 'workflow_dispatch' || github.event.issue.title == '[automation] build presentation slides'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Materialize presentation files
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p assets
+          base64 -d .build/index.html.gz.b64 | gzip -d > index.html
+          base64 -d .build/style.css.gz.b64 | gzip -d > assets/style.css
+          base64 -d .build/slides.js.gz.b64 | gzip -d > assets/slides.js
+
+      - name: Convert selected paper figures to PNG
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y poppler-utils
+          mkdir -p assets/figures/dynamical-regimes assets/figures/selective-underfitting
+
+          convert_pdf() {
+            local src="$1"
+            local dst="$2"
+            pdftoppm -png -singlefile -r 190 "$src" "${dst%.png}"
+          }
+
+          DR='papers/dynamical-regimes/source'
+          SU='papers/selective-underfitting/source'
+
+          convert_pdf "$DR/Figures/Recap.pdf" assets/figures/dynamical-regimes/recap.png
+          convert_pdf "$DR/Figures/Speciation_GM.pdf" assets/figures/dynamical-regimes/speciation-gm.png
+          convert_pdf "$DR/Figures/Symmetry_breaking_all_3std.pdf" assets/figures/dynamical-regimes/speciation-real.png
+          convert_pdf "$DR/Figures/Collapse_GM.pdf" assets/figures/dynamical-regimes/collapse-gm.png
+          convert_pdf "$DR/Figures/Collapse_ftalpha.pdf" assets/figures/dynamical-regimes/collapse-real.png
+
+          convert_pdf "$SU/figures/extrapolation/extrapolation_illust.pdf" assets/figures/selective-underfitting/extrapolation-illustration.png
+          convert_pdf "$SU/figures/extrapolation/extrapolation.pdf" assets/figures/selective-underfitting/extrapolation-distance.png
+          convert_pdf "$SU/figures/generalization/contrastive_scaling.pdf" assets/figures/selective-underfitting/contrastive-scaling.png
+          convert_pdf "$SU/figures/generalization/phase_transition_example.pdf" assets/figures/selective-underfitting/phase-transition-example.png
+          convert_pdf "$SU/figures/generalization/phase_transition_plot.pdf" assets/figures/selective-underfitting/phase-transition-plot.png
+          convert_pdf "$SU/figures/generalization/foe_generalization.pdf" assets/figures/selective-underfitting/foe-generalization.png
+          convert_pdf "$SU/figures/generalization/foe_memorization.pdf" assets/figures/selective-underfitting/foe-memorization.png
+          convert_pdf "$SU/figures/generalization/foe_plot.pdf" assets/figures/selective-underfitting/foe-plot.png
+
+      - name: Trim whitespace without clipping labels
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          from PIL import Image, ImageChops
+
+          for path in Path('assets/figures').rglob('*.png'):
+              image = Image.open(path).convert('RGB')
+              background = Image.new('RGB', image.size, (255, 255, 255))
+              diff = ImageChops.difference(image, background).convert('L')
+              diff = diff.point(lambda p: 255 if p > 8 else 0)
+              box = diff.getbbox()
+              if box:
+                  pad = 18
+                  left = max(0, box[0] - pad)
+                  top = max(0, box[1] - pad)
+                  right = min(image.width, box[2] + pad)
+                  bottom = min(image.height, box[3] + pad)
+                  image = image.crop((left, top, right, bottom))
+              image.save(path, optimize=True)
+              print(path, image.size)
+          PY
+
+      - name: Render and inspect all slides
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p qa/screenshots
+          npm init -y >/dev/null 2>&1
+          npm install playwright@1.48.2 >/dev/null
+          npx playwright install --with-deps chromium >/dev/null
+          python3 -m http.server 8000 > /tmp/slides-server.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID || true' EXIT
+          sleep 3
+          cat > /tmp/render-slides.js <<'NODE'
+          const { chromium } = require('playwright');
+          const fs = require('fs');
+          (async () => {
+            const browser = await chromium.launch({headless:true});
+            const page = await browser.newPage({viewport:{width:1600,height:900}, deviceScaleFactor:1});
+            const report = [];
+            for (let i=1; i<=22; i++) {
+              await page.goto(`http://127.0.0.1:8000/#${i}`, {waitUntil:'networkidle'});
+              await page.waitForTimeout(250);
+              const info = await page.evaluate(() => {
+                const slide = document.querySelector('.slide.active');
+                const rect = slide.getBoundingClientRect();
+                const images = [...slide.querySelectorAll('img')].map(img => ({
+                  src: img.getAttribute('src'), naturalWidth: img.naturalWidth,
+                  naturalHeight: img.naturalHeight,
+                  renderedWidth: Math.round(img.getBoundingClientRect().width),
+                  renderedHeight: Math.round(img.getBoundingClientRect().height)
+                }));
+                return {
+                  title: slide.dataset.title,
+                  clientWidth: slide.clientWidth,
+                  clientHeight: slide.clientHeight,
+                  scrollWidth: slide.scrollWidth,
+                  scrollHeight: slide.scrollHeight,
+                  overflowX: slide.scrollWidth > slide.clientWidth + 2,
+                  overflowY: slide.scrollHeight > slide.clientHeight + 2,
+                  bounds: {x:rect.x,y:rect.y,width:rect.width,height:rect.height},
+                  images,
+                  katexErrors: [...slide.querySelectorAll('.katex-error')].length
+                };
+              });
+              report.push({slide:i, ...info});
+              await page.screenshot({path:`qa/screenshots/slide-${String(i).padStart(2,'0')}.png`, fullPage:false});
+            }
+            fs.writeFileSync('qa/layout-report.json', JSON.stringify(report,null,2));
+            await browser.close();
+            const failures = report.filter(x => x.overflowX || x.overflowY || x.katexErrors || x.images.some(im => !im.naturalWidth));
+            if (failures.length) {
+              console.error(JSON.stringify(failures,null,2));
+              process.exitCode = 1;
+            }
+          })();
+          NODE
+          node /tmp/render-slides.js
+
+      - name: Build visual contact sheet
+        if: always()
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          from PIL import Image, ImageDraw
+          files = sorted(Path('qa/screenshots').glob('slide-*.png'))
+          pages = []
+          for offset in range(0, len(files), 4):
+              page = Image.new('RGB', (1600, 1000), 'white')
+              draw = ImageDraw.Draw(page)
+              for j, path in enumerate(files[offset:offset+4]):
+                  img = Image.open(path).convert('RGB')
+                  img.thumbnail((760, 430))
+                  x = 25 + (j % 2) * 800
+                  y = 35 + (j // 2) * 490
+                  page.paste(img, (x + (760-img.width)//2, y + 25))
+                  draw.text((x, y), path.stem, fill='black')
+              pages.append(page)
+          if pages:
+              pages[0].save('qa/contact-sheet.pdf', save_all=True, append_images=pages[1:], resolution=120)
+          PY
+
+      - name: Commit presentation and QA artifacts
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html assets qa/contact-sheet.pdf qa/layout-report.json
+          if git diff --cached --quiet; then
+            echo 'No presentation changes to commit.'
+            exit 0
+          fi
+          git commit -m 'Build joint diffusion paper presentation'
+          git push origin HEAD:main
