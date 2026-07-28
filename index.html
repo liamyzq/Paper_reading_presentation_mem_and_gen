@@ -3,678 +3,480 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="A responsive paper-reading presentation on memorization and generalization in diffusion models." />
-  <title>Memorization & Generalization in Diffusion Models</title>
-
+  <meta name="description" content="Joint paper presentation on diffusion-model dynamical regimes and selective underfitting." />
+  <title>Memorization and Generalization in Diffusion Models</title>
   <link rel="preconnect" href="https://cdn.jsdelivr.net" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
-
-  <style>
-    :root {
-      --ink: #eef4ff;
-      --muted: #aab9d2;
-      --faint: #71809a;
-      --bg: #07101f;
-      --panel: rgba(17, 30, 54, 0.78);
-      --panel-strong: rgba(22, 39, 68, 0.96);
-      --line: rgba(163, 190, 230, 0.18);
-      --blue: #7cc5ff;
-      --cyan: #65e6dc;
-      --gold: #ffd27a;
-      --rose: #ff8fa3;
-      --green: #8ce6ad;
-      --shadow: 0 24px 80px rgba(0, 0, 0, 0.34);
-      --body: clamp(17px, 1.55vw, 28px);
-      --small: clamp(13px, 1.05vw, 18px);
-      --h1: clamp(44px, 6vw, 96px);
-      --h2: clamp(32px, 4.2vw, 68px);
-      --h3: clamp(20px, 2vw, 34px);
-    }
-
-    * { box-sizing: border-box; }
-
-    html, body {
-      margin: 0;
-      min-height: 100%;
-      background: var(--bg);
-      color: var(--ink);
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      overflow: hidden;
-    }
-
-    body::before {
-      content: "";
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      background:
-        radial-gradient(circle at 14% 16%, rgba(57, 133, 255, 0.18), transparent 27%),
-        radial-gradient(circle at 84% 74%, rgba(38, 207, 192, 0.12), transparent 30%),
-        linear-gradient(135deg, #07101f 0%, #0b1528 48%, #08111f 100%);
-    }
-
-    button { font: inherit; }
-
-    .deck {
-      position: relative;
-      width: 100vw;
-      height: 100vh;
-      isolation: isolate;
-    }
-
-    .slide {
-      position: absolute;
-      inset: 0;
-      display: grid;
-      align-content: center;
-      gap: clamp(18px, 2.2vh, 34px);
-      padding: clamp(34px, 5.5vw, 92px) clamp(34px, 7vw, 118px) clamp(58px, 8vh, 100px);
-      opacity: 0;
-      transform: translateX(34px) scale(0.992);
-      pointer-events: none;
-      transition: opacity 360ms ease, transform 420ms cubic-bezier(.2,.8,.2,1);
-    }
-
-    .slide.active {
-      opacity: 1;
-      transform: translateX(0) scale(1);
-      pointer-events: auto;
-    }
-
-    .slide.leaving { transform: translateX(-34px) scale(0.992); }
-
-    .eyebrow {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      color: var(--cyan);
-      font-size: var(--small);
-      font-weight: 760;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-    }
-
-    .eyebrow::before {
-      content: "";
-      width: 34px;
-      height: 2px;
-      background: linear-gradient(90deg, var(--cyan), transparent);
-    }
-
-    h1, h2, h3, p { margin: 0; }
-
-    h1 {
-      max-width: 14ch;
-      font-size: var(--h1);
-      line-height: 0.98;
-      letter-spacing: -0.055em;
-      text-wrap: balance;
-    }
-
-    h2 {
-      font-size: var(--h2);
-      line-height: 1.03;
-      letter-spacing: -0.045em;
-      text-wrap: balance;
-    }
-
-    h3 {
-      font-size: var(--h3);
-      line-height: 1.16;
-      letter-spacing: -0.025em;
-    }
-
-    p, li {
-      font-size: var(--body);
-      line-height: 1.45;
-    }
-
-    .muted { color: var(--muted); }
-    .blue { color: var(--blue); }
-    .cyan { color: var(--cyan); }
-    .gold { color: var(--gold); }
-    .rose { color: var(--rose); }
-    .green { color: var(--green); }
-
-    .hero-copy {
-      max-width: 38ch;
-      color: var(--muted);
-      font-size: clamp(18px, 1.8vw, 31px);
-      line-height: 1.45;
-    }
-
-    .meta-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-top: 8px;
-    }
-
-    .chip {
-      display: inline-flex;
-      align-items: center;
-      min-height: 34px;
-      padding: 7px 13px;
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.035);
-      color: var(--muted);
-      font-size: var(--small);
-    }
-
-    .grid-2, .grid-3 {
-      display: grid;
-      gap: clamp(16px, 2vw, 28px);
-      align-items: stretch;
-    }
-
-    .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-
-    .card {
-      position: relative;
-      min-width: 0;
-      padding: clamp(18px, 2.1vw, 32px);
-      border: 1px solid var(--line);
-      border-radius: 24px;
-      background: linear-gradient(145deg, rgba(23, 42, 72, 0.86), rgba(12, 24, 44, 0.72));
-      box-shadow: var(--shadow);
-      overflow: hidden;
-    }
-
-    .card::after {
-      content: "";
-      position: absolute;
-      inset: auto -25% -60% 45%;
-      height: 150px;
-      background: radial-gradient(circle, rgba(101, 230, 220, 0.10), transparent 70%);
-      pointer-events: none;
-    }
-
-    .card p, .card li { font-size: clamp(15px, 1.25vw, 22px); }
-
-    .number {
-      display: inline-grid;
-      place-items: center;
-      width: 38px;
-      aspect-ratio: 1;
-      margin-bottom: 18px;
-      border-radius: 12px;
-      background: rgba(124, 197, 255, 0.12);
-      color: var(--blue);
-      font-size: var(--small);
-      font-weight: 800;
-    }
-
-    .clean-list {
-      display: grid;
-      gap: 14px;
-      margin: 0;
-      padding: 0;
-      list-style: none;
-    }
-
-    .clean-list li {
-      position: relative;
-      padding-left: 25px;
-      color: var(--muted);
-    }
-
-    .clean-list li::before {
-      content: "";
-      position: absolute;
-      left: 0;
-      top: 0.62em;
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--cyan);
-      box-shadow: 0 0 18px rgba(101, 230, 220, 0.5);
-    }
-
-    .formula {
-      min-width: 0;
-      padding: clamp(16px, 2vw, 28px);
-      border: 1px solid rgba(124, 197, 255, 0.21);
-      border-radius: 20px;
-      background: rgba(4, 12, 25, 0.62);
-      font-size: clamp(18px, 1.7vw, 30px);
-      line-height: 1.35;
-      overflow-x: auto;
-      overflow-y: hidden;
-      scrollbar-width: thin;
-    }
-
-    .formula.compact { font-size: clamp(15px, 1.35vw, 24px); }
-
-    /* KaTeX size policy: inline math follows surrounding text exactly. */
-    .katex { font-size: 1em; }
-    .katex-display { margin: 0; }
-    .formula .katex-display > .katex { text-align: center; }
-    .card .katex-display { margin: 0.55em 0; }
-
-    .inline-test {
-      padding: 20px 24px;
-      border-left: 3px solid var(--cyan);
-      border-radius: 0 16px 16px 0;
-      background: rgba(101, 230, 220, 0.06);
-      color: var(--muted);
-    }
-
-    .spectrum {
-      display: grid;
-      gap: 16px;
-      padding: 20px 22px 24px;
-      border-radius: 20px;
-      background: rgba(4, 12, 25, 0.62);
-      border: 1px solid var(--line);
-    }
-
-    .bars {
-      display: flex;
-      align-items: end;
-      gap: clamp(4px, 0.55vw, 9px);
-      height: clamp(150px, 25vh, 290px);
-      padding-top: 22px;
-      border-bottom: 1px solid rgba(255,255,255,0.12);
-    }
-
-    .bar {
-      flex: 1;
-      min-width: 4px;
-      border-radius: 7px 7px 2px 2px;
-      background: linear-gradient(180deg, rgba(124,197,255,0.95), rgba(124,197,255,0.28));
-      box-shadow: 0 0 18px rgba(124,197,255,0.12);
-    }
-
-    .bar.small {
-      background: linear-gradient(180deg, rgba(255,143,163,0.86), rgba(255,143,163,0.22));
-      box-shadow: 0 0 18px rgba(255,143,163,0.10);
-    }
-
-    .axis-labels {
-      display: flex;
-      justify-content: space-between;
-      color: var(--faint);
-      font-size: var(--small);
-    }
-
-    .timeline {
-      display: grid;
-      grid-template-columns: 1fr auto 1fr auto 1fr;
-      align-items: center;
-      gap: 14px;
-    }
-
-    .phase {
-      min-height: 165px;
-      display: grid;
-      align-content: center;
-      gap: 10px;
-      padding: 20px;
-      border-radius: 20px;
-      border: 1px solid var(--line);
-      background: var(--panel);
-      text-align: center;
-    }
-
-    .arrow {
-      color: var(--faint);
-      font-size: clamp(22px, 2.4vw, 42px);
-    }
-
-    .callout {
-      padding: clamp(20px, 2.4vw, 36px);
-      border-radius: 24px;
-      border: 1px solid rgba(255, 210, 122, 0.28);
-      background: linear-gradient(135deg, rgba(255, 210, 122, 0.10), rgba(255, 255, 255, 0.025));
-      color: #fff4da;
-      font-size: clamp(21px, 2.1vw, 36px);
-      line-height: 1.36;
-    }
-
-    .footer {
-      position: fixed;
-      left: clamp(20px, 3.4vw, 58px);
-      right: clamp(20px, 3.4vw, 58px);
-      bottom: 22px;
-      z-index: 10;
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      color: var(--faint);
-      font-size: 13px;
-    }
-
-    .progress-track {
-      flex: 1;
-      height: 3px;
-      border-radius: 999px;
-      background: rgba(255,255,255,0.10);
-      overflow: hidden;
-    }
-
-    .progress-bar {
-      width: 14.28%;
-      height: 100%;
-      border-radius: inherit;
-      background: linear-gradient(90deg, var(--blue), var(--cyan));
-      transition: width 320ms ease;
-    }
-
-    .controls {
-      display: flex;
-      gap: 8px;
-    }
-
-    .controls button {
-      width: 38px;
-      height: 34px;
-      border: 1px solid var(--line);
-      border-radius: 11px;
-      background: rgba(255,255,255,0.04);
-      color: var(--muted);
-      cursor: pointer;
-    }
-
-    .controls button:hover { color: var(--ink); border-color: rgba(124,197,255,0.45); }
-
-    .slide-no {
-      min-width: 58px;
-      text-align: right;
-      font-variant-numeric: tabular-nums;
-    }
-
-    @media (max-width: 900px) {
-      html, body { overflow: auto; }
-      .deck { height: auto; min-height: 100vh; }
-      .slide {
-        position: relative;
-        display: none;
-        min-height: 100vh;
-        padding: 46px 24px 88px;
-      }
-      .slide.active { display: grid; }
-      .grid-2, .grid-3 { grid-template-columns: 1fr; }
-      .timeline { grid-template-columns: 1fr; }
-      .arrow { transform: rotate(90deg); text-align: center; }
-      .footer { left: 18px; right: 18px; }
-      .formula { font-size: clamp(16px, 4vw, 22px); }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .slide, .progress-bar { transition: none; }
-    }
-  </style>
+  <link rel="stylesheet" href="assets/style.css" />
 </head>
 <body>
-  <main class="deck" aria-label="Paper presentation">
-    <section class="slide active" data-title="Title">
-      <div class="eyebrow">Paper reading presentation · prototype</div>
-      <h1>Memorization <span class="blue">and</span> Generalization in Diffusion Models</h1>
-      <p class="hero-copy">
-        A spectral view of why useful structure can emerge early in training, while exact training-sample recovery appears later.
-      </p>
-      <div class="meta-row">
-        <span class="chip">NTK / lazy-training lens</span>
-        <span class="chip">Spectral dynamics</span>
-        <span class="chip">Diffusion-time dependence</span>
-        <span class="chip">Liam Ye</span>
-      </div>
-    </section>
+<main class="deck" aria-label="Joint paper presentation">
 
-    <section class="slide" data-title="Question">
-      <div class="eyebrow">01 · Central question</div>
-      <h2>How can one model <span class="green">generalize first</span> and <span class="rose">memorize later</span>?</h2>
-      <div class="grid-3">
-        <article class="card">
-          <div class="number">A</div>
-          <h3 class="green">Early training</h3>
-          <p class="muted">Generated samples capture broad, shared structure rather than reproducing individual examples.</p>
-        </article>
-        <article class="card">
-          <div class="number">B</div>
-          <h3 class="gold">Transition</h3>
-          <p class="muted">More spectral directions become fitted, increasing detail but also sensitivity to the finite dataset.</p>
-        </article>
-        <article class="card">
-          <div class="number">C</div>
-          <h3 class="rose">Late training</h3>
-          <p class="muted">Small-scale, sample-specific modes can eventually reconstruct or closely track training points.</p>
-        </article>
-      </div>
-      <div class="inline-test">
-        Inline-size test: the score network <span class="cyan">\(s_\theta(x_t,t)\)</span> should sit on the same baseline and at the same visual size as the surrounding sentence.
-      </div>
-    </section>
+<section class="slide active" data-title="Title">
+  <div class="eyebrow">Paper reading presentation</div>
+  <h1>Memorization <span class="blue">and</span> Generalization in Diffusion Models</h1>
+  <p class="hero-copy">From exact empirical-score dynamics to selective underfitting beyond the training region.</p>
+  <div class="meta-row">
+    <span class="chip">Dynamical Regimes of Diffusion Models</span>
+    <span class="chip">Selective Underfitting in Diffusion Models</span>
+    <span class="chip">Liam Ye</span>
+  </div>
+</section>
 
-    <section class="slide" data-title="Objective">
-      <div class="eyebrow">02 · Training objective</div>
-      <h2>Score matching couples <span class="blue">optimization time</span> and <span class="cyan">diffusion time</span></h2>
-      <div class="formula compact" aria-label="Denoising score matching objective">
-        \[
-        \mathcal{L}(\theta)
-        = \frac{1}{n}\sum_{i=1}^{n}
-        \mathbb{E}_{t\sim p(t)}
-        \mathbb{E}_{x_t\sim q_t(\cdot\mid x_i)}
-        \!\left[
-        \lambda(t)
-        \left\|s_\theta(x_t,t)-\nabla_{x_t}\log q_t(x_t\mid x_i)\right\|_2^2
-        \right].
-        \]
-      </div>
-      <div class="grid-2">
-        <article class="card">
-          <h3>Optimization time <span class="blue">\(\tau\)</span></h3>
-          <p class="muted">Controls how far training has progressed and which kernel eigenmodes have been learned.</p>
-        </article>
-        <article class="card">
-          <h3>Diffusion time <span class="cyan">\(t\)</span></h3>
-          <p class="muted">Controls the noise level, target score geometry, and potentially the spectrum of the relevant Gram matrix.</p>
-        </article>
-      </div>
-    </section>
+<section class="slide" data-title="The paradox">
+  <div class="eyebrow">01 · Central question</div>
+  <h2>If training learns the <span class="green">empirical score</span>, why do diffusion models generate anything new?</h2>
+  <div class="formula big-eq">\[
+    s_\theta(x_t,t)\approx s_\star(x_t,t)=\nabla_{x_t}\log p_t^e(x_t)
+    \quad\Longrightarrow\quad ?
+  \]</div>
+  <div class="grid-2">
+    <article class="card">
+      <div class="number">A</div>
+      <h3>Dynamical Regimes</h3>
+      <p class="muted">Assume the empirical score is exact. What happens along the reverse diffusion trajectory?</p>
+    </article>
+    <article class="card">
+      <div class="number">B</div>
+      <h3>Selective Underfitting</h3>
+      <p class="muted">A real neural network is not exact everywhere. Where does it fit the empirical score, and where does it deviate?</p>
+    </article>
+  </div>
+  <div class="symbols">
+    <span class="symbol"><b>\(x_t\)</b> noisy state at diffusion time \(t\)</span>
+    <span class="symbol"><b>\(p_t^e\)</b> noised empirical density</span>
+    <span class="symbol"><b>\(s_\star\)</b> empirical score</span>
+    <span class="symbol"><b>\(s_\theta\)</b> learned score</span>
+  </div>
+</section>
 
-    <section class="slide" data-title="Spectral dynamics">
-      <div class="eyebrow">03 · Spectral mechanism</div>
-      <h2>Large-eigenvalue modes are learned faster</h2>
-      <div class="grid-2">
-        <div class="spectrum" aria-label="Illustrative two-bulk spectrum">
-          <div class="bars">
-            <span class="bar" style="height:94%"></span>
-            <span class="bar" style="height:86%"></span>
-            <span class="bar" style="height:78%"></span>
-            <span class="bar" style="height:69%"></span>
-            <span class="bar" style="height:62%"></span>
-            <span class="bar" style="height:53%"></span>
-            <span class="bar small" style="height:25%"></span>
-            <span class="bar small" style="height:21%"></span>
-            <span class="bar small" style="height:18%"></span>
-            <span class="bar small" style="height:14%"></span>
-            <span class="bar small" style="height:11%"></span>
-            <span class="bar small" style="height:8%"></span>
-          </div>
-          <div class="axis-labels"><span>shared / smooth modes</span><span>sample-specific modes</span></div>
-        </div>
-        <article class="card">
-          <p class="muted">Under linearized gradient flow, each eigendirection evolves independently:</p>
-          <div class="formula compact">
-            \[
-            a_j(\tau)
-            = \bigl(1-e^{-\eta\lambda_j\tau}\bigr)y_j
-            + e^{-\eta\lambda_j\tau}a_j(0).
-            \]
-          </div>
-          <ul class="clean-list">
-            <li><span class="blue">Large \(\lambda_j\)</span>: rapid fitting.</li>
-            <li><span class="rose">Small \(\lambda_j\)</span>: delayed fitting.</li>
-            <li>A separated spectrum naturally creates distinct training regimes.</li>
-          </ul>
-        </article>
-      </div>
-    </section>
+<section class="slide compact" data-title="Unified notation">
+  <div class="eyebrow">02 · Notation bridge</div>
+  <h2>One notation for both papers</h2>
+  <div class="formula">\[
+    x_t=a_t x_0+b_t\epsilon,\qquad \epsilon\sim\mathcal N(0,I_d)
+  \]</div>
+  <div class="formula compact">\[
+    p_t^e(x)=\frac1n\sum_{i=1}^{n}\mathcal N\!\left(x; a_t x_0^{(i)}, b_t^2 I_d\right),
+    \qquad s_\star(x,t)=\nabla_x\log p_t^e(x)
+  \]</div>
+  <div class="grid-3">
+    <article class="card soft"><h3>Data and scale</h3><ul class="clean-list"><li>\(x_0^{(i)}\): training sample \(i\)</li><li>\(n\): number of training samples</li><li>\(d\): data dimension</li></ul></article>
+    <article class="card soft"><h3>Forward schedule</h3><ul class="clean-list"><li>\(a_t\): retained signal</li><li>\(b_t\): noise scale</li><li>Dynamical Regimes: \(a_t=e^{-t}\), \(b_t^2=\Delta_t=1-e^{-2t}\)</li></ul></article>
+    <article class="card soft"><h3>Population vs. empirical</h3><ul class="clean-list"><li>\(p_t\): noised population density</li><li>\(p_t^e\): noised finite-data density</li><li>\(\rho=\log n/d\): exponential data-rate parameter</li></ul></article>
+  </div>
+  <p class="paper-caption">Time conventions differ across the papers. Throughout the talk, “early generation” means high noise and “late generation” means low noise.</p>
+</section>
 
-    <section class="slide" data-title="Regimes">
-      <div class="eyebrow">04 · Training regimes</div>
-      <h2>A simple three-stage picture</h2>
-      <div class="timeline">
-        <article class="phase">
-          <h3 class="muted">Underfit</h3>
-          <p class="muted">Neither spectral bulk is sufficiently learned.</p>
-        </article>
-        <div class="arrow">→</div>
-        <article class="phase">
-          <h3 class="green">Generalizing window</h3>
-          <p class="muted">Dominant modes are fitted while weak modes remain suppressed.</p>
-        </article>
-        <div class="arrow">→</div>
-        <article class="phase">
-          <h3 class="rose">Memorizing regime</h3>
-          <p class="muted">Weak, data-specific modes become increasingly resolved.</p>
-        </article>
-      </div>
-      <div class="formula">
-        \[
-        \underbrace{\tau \ll (\eta\lambda_{\mathrm{large}})^{-1}}_{\text{underfit}}
-        \quad\longrightarrow\quad
-        \underbrace{(\eta\lambda_{\mathrm{large}})^{-1}\!\ll\tau\ll(\eta\lambda_{\mathrm{small}})^{-1}}_{\text{selective fitting}}
-        \quad\longrightarrow\quad
-        \underbrace{\tau \gg (\eta\lambda_{\mathrm{small}})^{-1}}_{\text{memorization}}.
-        \]
-      </div>
-    </section>
-
-    <section class="slide" data-title="Diffusion time">
-      <div class="eyebrow">05 · Important open check</div>
-      <h2>Does the mechanism hold uniformly across diffusion time <span class="cyan">\(t\)</span>?</h2>
-      <div class="grid-2">
-        <article class="card">
-          <h3>What may vary with \(t\)?</h3>
-          <ul class="clean-list">
-            <li>The scale and geometry of noisy inputs \(x_t\).</li>
-            <li>The target score magnitude and smoothness.</li>
-            <li>The NTK Gram spectrum \(K_t\), including bulk separation.</li>
-            <li>The effective weighting induced by \(p(t)\lambda(t)\).</li>
-          </ul>
-        </article>
-        <article class="card">
-          <h3>A direct diagnostic</h3>
-          <div class="formula compact">
-            \[
-            K_t = U_t\,\mathrm{diag}\!\bigl(\lambda_1(t),\ldots,\lambda_n(t)\bigr)U_t^\top.
-            \]
-          </div>
-          <p class="muted">Track the spectrum, bulk gap, and modal fitting rates across representative noise levels—not only at one selected \(t\).</p>
-        </article>
-      </div>
-      <div class="callout">
-        The strongest empirical validation would show that the proposed spectral separation persists over the practically important portion of the noise schedule.
-      </div>
-    </section>
-
-    <section class="slide" data-title="Takeaways">
-      <div class="eyebrow">06 · Takeaways</div>
-      <h2>What this viewpoint explains—and what it still needs</h2>
-      <div class="grid-3">
-        <article class="card">
-          <div class="number">1</div>
-          <h3>Mechanism</h3>
-          <p class="muted">Spectral bias gives a clean account of why structure can be learned before sample-specific detail.</p>
-        </article>
-        <article class="card">
-          <div class="number">2</div>
-          <h3>Prediction</h3>
-          <p class="muted">A useful early-stopping window should align with the separation between fast and slow eigendirections.</p>
-        </article>
-        <article class="card">
-          <div class="number">3</div>
-          <h3>Boundary</h3>
-          <p class="muted">The explanation is most convincing when its spectrum and time-scale claims are verified across \(t\) and beyond the lazy-training approximation.</p>
-        </article>
-      </div>
-      <p class="hero-copy">Use the ← and → keys, space bar, swipe, or the controls below to navigate.</p>
-    </section>
-  </main>
-
-  <footer class="footer" aria-label="Presentation controls">
-    <span id="sectionName">Title</span>
-    <div class="progress-track" aria-hidden="true"><div class="progress-bar" id="progressBar"></div></div>
-    <div class="controls">
-      <button id="prev" type="button" aria-label="Previous slide">←</button>
-      <button id="next" type="button" aria-label="Next slide">→</button>
+<section class="slide compact" data-title="Exact reverse dynamics">
+  <div class="eyebrow">03 · Exact empirical-score dynamics</div>
+  <h2>The exact reverse process must end at the empirical distribution</h2>
+  <div class="grid-2 wide-left">
+    <div class="figure-card tall"><img src="assets/figures/dynamical-regimes/recap.png" alt="Three dynamical regimes from the Dynamical Regimes paper" /></div>
+    <div class="card">
+      <div class="formula compact">\[
+        p_0^e(x)=\frac1n\sum_{i=1}^n\delta(x-x_0^{(i)})
+      \]</div>
+      <ul class="clean-list">
+        <li>Forward diffusion maps \(p_0^e\) to \(p_t^e\).</li>
+        <li>The reverse SDE using \(s_\star=\nabla\log p_t^e\) time-reverses this path.</li>
+        <li>At \(t=0\), the endpoint distribution is again \(p_0^e\): a training point.</li>
+      </ul>
+      <div class="callout cool">The question is not whether exact dynamics memorizes, but <strong>when sample-specific memorization becomes visible</strong>.</div>
     </div>
-    <span class="slide-no" id="slideNo">01 / 07</span>
-  </footer>
+  </div>
+  <p class="paper-caption">Figure: Biroli et al., “Dynamical Regimes of Diffusion Models,” Fig. 1.</p>
+</section>
 
-  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
-  <script>
-    const slides = [...document.querySelectorAll('.slide')];
-    const progressBar = document.getElementById('progressBar');
-    const slideNo = document.getElementById('slideNo');
-    const sectionName = document.getElementById('sectionName');
-    let current = 0;
-    let touchStartX = null;
+<section class="slide compact" data-title="Three regimes">
+  <div class="eyebrow">04 · Main phenomenon</div>
+  <h2>Noise → class commitment → training-point commitment</h2>
+  <div class="timeline">
+    <article class="phase"><h3 class="faint">Regime I</h3><p class="muted">Noise-like bundle. The future class is still undecided.</p></article>
+    <div class="arrow">→</div>
+    <article class="phase"><h3 class="green">Regime II</h3><p class="muted">A semantic class is selected, but no individual training point is selected.</p></article>
+    <div class="arrow">→</div>
+    <article class="phase"><h3 class="rose">Regime III</h3><p class="muted">The trajectory enters the attraction basin of one training point.</p></article>
+  </div>
+  <div class="flow">
+    <div class="formula">\[t_S:\ \text{speciation time}\]</div>
+    <div class="arrow">and</div>
+    <div class="formula">\[t_C:\ \text{collapse time}\]</div>
+  </div>
+  <div class="callout">The two transitions have different causes: <span class="blue">spectral signal recovery</span> versus <span class="rose">sample-level density condensation</span>.</div>
+</section>
 
-    function showSlide(nextIndex) {
-      const normalized = (nextIndex + slides.length) % slides.length;
-      slides.forEach((slide, index) => {
-        slide.classList.toggle('active', index === normalized);
-        slide.classList.toggle('leaving', index < normalized);
-        slide.setAttribute('aria-hidden', index === normalized ? 'false' : 'true');
-      });
-      current = normalized;
-      progressBar.style.width = `${((current + 1) / slides.length) * 100}%`;
-      slideNo.textContent = `${String(current + 1).padStart(2, '0')} / ${String(slides.length).padStart(2, '0')}`;
-      sectionName.textContent = slides[current].dataset.title || '';
-      history.replaceState(null, '', `#${current + 1}`);
-    }
+<section class="slide compact" data-title="Speciation criterion">
+  <div class="eyebrow">05 · Speciation</div>
+  <h2>A dominant covariance mode becomes distinguishable from noise</h2>
+  <div class="grid-2">
+    <div class="card">
+      <div class="formula">\[
+        C(t)=a_t^2 C_0+b_t^2 I_d
+      \]</div>
+      <div class="formula">\[
+        \Lambda e^{-2t_S}\approx 1
+      \]</div>
+      <div class="symbols">
+        <span class="symbol"><b>\(C_0\)</b> clean-data covariance</span>
+        <span class="symbol"><b>\(C(t)\)</b> noisy covariance</span>
+        <span class="symbol"><b>\(\Lambda\)</b> largest eigenvalue of \(C_0\)</span>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Signal–noise balance</h3>
+      <ul class="clean-list">
+        <li>Along the strongest data direction, structured variance is \(\Lambda e^{-2t}\).</li>
+        <li>Isotropic noise contributes approximately one at high noise.</li>
+        <li>Reverse trajectories can separate into classes once the dominant signal becomes visible.</li>
+      </ul>
+      <div class="callout cool">Speciation recovers a <strong>macroscopic data direction</strong>, not an individual sample.</div>
+    </div>
+  </div>
+</section>
 
-    document.getElementById('prev').addEventListener('click', () => showSlide(current - 1));
-    document.getElementById('next').addEventListener('click', () => showSlide(current + 1));
+<section class="slide compact" data-title="Landau proof">
+  <div class="eyebrow">06 · Speciation proof route I</div>
+  <h2>Landau expansion: speciation is a curvature instability</h2>
+  <div class="grid-2 wide-right">
+    <div class="card">
+      <ol class="clean-list">
+        <li>Expand \(\log p_t(x)\) in the small parameter \(e^{-t}\) at high noise.</li>
+        <li>The quadratic term is controlled by \(M(t)\approx I_d-e^{-2t}C_0\).</li>
+        <li>The curvature first becomes unstable in the top-eigenvector direction of \(C_0\).</li>
+        <li>This creates a symmetry-breaking split in the reverse dynamics.</li>
+      </ol>
+    </div>
+    <div>
+      <div class="formula compact">\[
+        \log p_t(x)\approx K(t)+\ell(t)^\top x-\frac{1}{2b_t^2}x^\top M(t)x+\cdots
+      \]</div>
+      <div class="formula">\[
+        M(t)\approx I_d-e^{-2t}C_0
+      \]</div>
+      <div class="symbols">
+        <span class="symbol"><b>\(K(t)\)</b> term independent of \(x\)</span>
+        <span class="symbol"><b>\(\ell(t)\)</b> linear coefficient</span>
+        <span class="symbol"><b>\(M(t)\)</b> quadratic curvature matrix</span>
+      </div>
+    </div>
+  </div>
+</section>
 
-    document.addEventListener('keydown', (event) => {
-      if (['ArrowRight', 'PageDown', ' '].includes(event.key)) {
-        event.preventDefault();
-        showSlide(current + 1);
-      }
-      if (['ArrowLeft', 'PageUp'].includes(event.key)) {
-        event.preventDefault();
-        showSlide(current - 1);
-      }
-      if (event.key === 'Home') showSlide(0);
-      if (event.key === 'End') showSlide(slides.length - 1);
-    });
+<section class="slide compact" data-title="Gaussian mixture">
+  <div class="eyebrow">07 · Speciation proof route II</div>
+  <h2>Gaussian mixture reduces the class decision to one order parameter</h2>
+  <div class="grid-2 wide-left">
+    <div class="figure-card"><img src="assets/figures/dynamical-regimes/speciation-gm.png" alt="Gaussian mixture speciation curves" /></div>
+    <div class="card">
+      <div class="formula compact">\[
+        p_0=\tfrac12\mathcal N(m,\sigma^2I_d)+\tfrac12\mathcal N(-m,\sigma^2I_d),
+        \qquad \|m\|^2=d\widetilde\mu^2
+      \]</div>
+      <div class="formula">\[
+        q(t)=\frac{m^\top x_t}{\sqrt d}
+      \]</div>
+      <ul class="clean-list">
+        <li>\(m\): vector separating the two class centers.</li>
+        <li>\(\sigma^2\): within-class variance.</li>
+        <li>\(\widetilde\mu\): class separation per dimension.</li>
+        <li>The effective potential for \(q(t)\) changes from symmetric noise-like behavior to two class-selective branches.</li>
+      </ul>
+    </div>
+  </div>
+  <p class="paper-caption">Figure: Biroli et al., Gaussian-mixture speciation experiment.</p>
+</section>
 
-    document.addEventListener('touchstart', (event) => {
-      touchStartX = event.changedTouches[0].screenX;
-    }, { passive: true });
+<section class="slide compact" data-title="Cloning observable">
+  <div class="eyebrow">08 · Operational diagnostic</div>
+  <h2>Clone a trajectory and ask whether both futures choose the same class</h2>
+  <div class="grid-2">
+    <div class="card">
+      <div class="formula">\[
+        \phi(t)=\Pr\!\left(\text{two clones created at }t\text{ end in the same class}\right)
+      \]</div>
+      <ul class="clean-list">
+        <li>Before speciation: independent future noise can change the class, so \(\phi(t)\approx\tfrac12\).</li>
+        <li>After speciation: the class is already fixed, so \(\phi(t)\approx1\).</li>
+        <li>For the Gaussian mixture, all directions orthogonal to \(m\) integrate out, leaving a one-dimensional formula.</li>
+      </ul>
+    </div>
+    <div class="figure-card"><img src="assets/figures/dynamical-regimes/speciation-real.png" alt="Speciation curves across realistic datasets" /></div>
+  </div>
+  <div class="callout cool">Rescaling time by \(t_S=\tfrac12\log\Lambda\) aligns the transition across very different image datasets.</div>
+  <p class="paper-caption">Figure: Biroli et al., clone-based speciation on MNIST, CIFAR, ImageNet and LSUN.</p>
+</section>
 
-    document.addEventListener('touchend', (event) => {
-      if (touchStartX === null) return;
-      const delta = event.changedTouches[0].screenX - touchStartX;
-      if (Math.abs(delta) > 45) showSlide(current + (delta < 0 ? 1 : -1));
-      touchStartX = null;
-    }, { passive: true });
+<section class="slide compact" data-title="Regime II">
+  <div class="eyebrow">09 · Why Regime II generalizes</div>
+  <h2>After the class is chosen, the score becomes a population-class score</h2>
+  <div class="grid-2">
+    <div class="formula compact">\[
+      s_i(x,t)=-\frac{x_i}{\Gamma_t}+m_i\frac{e^{-t}}{\Gamma_t}
+      \tanh\!\left(\frac{e^{-t}m^\top x}{\Gamma_t}\right),
+      \qquad \Gamma_t=b_t^2+\sigma^2e^{-2t}
+    \]</div>
+    <div class="formula compact">\[
+      m^\top x\to +\infty
+      \quad\Longrightarrow\quad
+      s_i(x,t)\to -\frac{x_i}{\Gamma_t}+m_i\frac{e^{-t}}{\Gamma_t}
+    \]</div>
+  </div>
+  <div class="grid-3">
+    <article class="card soft"><h3>Before speciation</h3><p class="muted">The sign of \(m^\top x\) is unresolved.</p></article>
+    <article class="card soft"><h3>After speciation</h3><p class="muted">The \(\tanh\) saturates to \(+1\) or \(-1\).</p></article>
+    <article class="card soft"><h3>Interpretation</h3><p class="muted">The remaining reverse process is that of one full Gaussian class, not one training point.</p></article>
+  </div>
+  <div class="callout">This is <strong>intermediate-time generalization</strong>: exact empirical dynamics is class-level now, but will still collapse later.</div>
+</section>
 
-    window.addEventListener('DOMContentLoaded', () => {
-      const requested = Number.parseInt(location.hash.slice(1), 10);
-      showSlide(Number.isFinite(requested) ? requested - 1 : 0);
-    });
+<section class="slide compact" data-title="Collapse competition">
+  <div class="eyebrow">10 · Collapse</div>
+  <h2>One training point competes against the aggregate of all others</h2>
+  <div class="grid-2 wide-right">
+    <div class="figure-card"><img src="assets/figures/dynamical-regimes/collapse-gm.png" alt="Gaussian mixture collapse and excess entropy" /></div>
+    <div class="card">
+      <div class="formula compact">\[
+        x=a_1e^{-t}+\sqrt{\Delta_t}\,z,\qquad z\sim\mathcal N(0,I_d)
+      \]</div>
+      <div class="formula">\[
+        p_t^e(x)\propto Z_1+Z_{2:n}
+      \]</div>
+      <ul class="clean-list">
+        <li>\(a_1\): the training point from which \(x\) was noised.</li>
+        <li>\(Z_1\): density contribution from \(a_1\).</li>
+        <li>\(Z_{2:n}\): total contribution from the other \(n-1\) samples.</li>
+        <li>If \(Z_1\) dominates, the score points back to \(a_1\).</li>
+      </ul>
+    </div>
+  </div>
+  <p class="paper-caption">Figure: Biroli et al., Gaussian-mixture collapse.</p>
+</section>
 
-    window.addEventListener('load', () => {
-      if (window.renderMathInElement) {
-        renderMathInElement(document.body, {
-          delimiters: [
-            { left: '$$', right: '$$', display: true },
-            { left: '\\[', right: '\\]', display: true },
-            { left: '\\(', right: '\\)', display: false }
-          ],
-          throwOnError: false,
-          strict: false
-        });
-      }
-    });
-  </script>
+<section class="slide compact" data-title="Random Energy Model">
+  <div class="eyebrow">11 · Collapse proof procedure</div>
+  <h2>The other samples form a Random Energy Model partition function</h2>
+  <div class="grid-2">
+    <div>
+      <div class="formula compact">\[
+        Z_{2:n}=\sum_{\mu=2}^{n}e^{-E_\mu},
+        \qquad E_\mu=\frac{\|x-a_\mu e^{-t}\|^2}{2\Delta_t}
+      \]</div>
+      <div class="formula">\[
+        \psi(t)=\lim_{d\to\infty}\frac1d\log Z_{2:n}
+      \]</div>
+      <div class="symbols">
+        <span class="symbol"><b>\(E_\mu\)</b> distance-based random energy</span>
+        <span class="symbol"><b>\(\psi(t)\)</b> aggregate exponential rate</span>
+      </div>
+    </div>
+    <div class="card">
+      <ol class="clean-list">
+        <li>Each energy is order \(d\), while \(n=e^{\rho d}\).</li>
+        <li>A large-deviation rate function counts how many samples attain each energy density.</li>
+        <li>Laplace optimization yields the leading exponent \(\psi(t)\).</li>
+        <li>The self contribution satisfies \(d^{-1}\log Z_1\to-\tfrac12\).</li>
+      </ol>
+      <div class="formula compact">\[
+        \psi(t_C)=-\frac12
+      \]</div>
+    </div>
+  </div>
+  <div class="callout cool">Collapse is a condensation transition: the density changes from many-sample support to one-sample dominance.</div>
+</section>
+
+<section class="slide compact" data-title="Collapse time">
+  <div class="eyebrow">12 · Curse of dimensionality</div>
+  <h2>Delaying sample-specific collapse requires exponentially many data</h2>
+  <div class="formula">\[
+    t_C=\frac12\log\!\left(1+\frac{\sigma^2}{n^{2/d}-1}\right)
+  \]</div>
+  <div class="formula compact">\[
+    \rho=\frac{\log n}{d},\qquad n=e^{\rho d}
+  \]</div>
+  <div class="grid-3">
+    <article class="card"><h3>Polynomial \(n\)</h3><p class="muted">Then \(\rho\to0\), and the training set poorly covers the high-dimensional population.</p></article>
+    <article class="card"><h3>Exponential \(n\)</h3><p class="muted">Finite \(\rho\) can keep the non-collapsed regime visible down to order-one noise levels.</p></article>
+    <article class="card"><h3>Exact endpoint</h3><p class="muted">For any finite dataset, exact time reversal still ends at the empirical distribution at \(t=0\).</p></article>
+  </div>
+</section>
+
+<section class="slide compact" data-title="Entropy criterion">
+  <div class="eyebrow">13 · General collapse diagnostic</div>
+  <h2>Typical-set volume turns the REM result into an entropy criterion</h2>
+  <div class="grid-2 wide-left">
+    <div class="figure-card"><img src="assets/figures/dynamical-regimes/collapse-real.png" alt="Collapse diagnostics on realistic datasets" /></div>
+    <div class="card">
+      <div class="formula compact">\[
+        h(t)=-\frac1d\int p_t(x)\log p_t(x)\,dx
+      \]</div>
+      <div class="formula compact">\[
+        h^{\mathrm{sep}}(t)=\frac{\log n}{d}+\frac12+\frac12\log(2\pi b_t^2)
+      \]</div>
+      <div class="formula">\[
+        h(t_C)=h^{\mathrm{sep}}(t_C)
+      \]</div>
+      <ul class="clean-list">
+        <li>\(h(t)\): entropy per dimension of the population noised density.</li>
+        <li>\(h^{\mathrm{sep}}(t)\): entropy per dimension of \(n\) separated Gaussian lumps.</li>
+        <li>The zero of the excess entropy estimates when empirical lumps can cover the population typical set.</li>
+      </ul>
+    </div>
+  </div>
+  <p class="paper-caption">Figure: Biroli et al., collapse diagnostics on ImageNet and LSUN.</p>
+</section>
+
+<section class="slide" data-title="Transition to learned models">
+  <div class="eyebrow">14 · The missing mechanism</div>
+  <h2>Exact empirical-score dynamics explains collapse—but practical models often escape it</h2>
+  <div class="flow">
+    <div class="card"><h3 class="rose">Exact everywhere</h3><div class="formula compact">\[s_\theta=s_\star\]</div><p class="muted">The trajectory follows \(p_t^e\) and eventually returns to a training point.</p></div>
+    <div class="arrow">→</div>
+    <div class="card"><h3 class="cyan">Real neural score</h3><div class="formula compact">\[s_\theta\neq s_\star\ \text{somewhere}\]</div><p class="muted">The decisive question is where this deviation occurs in state space.</p></div>
+  </div>
+  <div class="callout">Selective Underfitting changes the axis of analysis: from <strong>when</strong> the dynamics changes to <strong>where</strong> the model is supervised.</div>
+</section>
+
+<section class="slide compact" data-title="Supervision shells">
+  <div class="eyebrow">15 · Selective Underfitting</div>
+  <h2>Training mass concentrates on shells around individual data points</h2>
+  <div class="grid-2 wide-left">
+    <div class="figure-card"><img src="assets/figures/selective-underfitting/extrapolation-illustration.png" alt="Selective underfitting illustration with supervision shells and extrapolation trajectory" /></div>
+    <div class="card">
+      <div class="formula compact">\[
+        \mathcal T_t(\delta)=\bigcup_{i=1}^{n}\left\{x:\left|\|x-a_t x_0^{(i)}\|-b_t\sqrt d\right|\le w_t(\delta)\right\}
+      \]</div>
+      <ul class="clean-list">
+        <li>\(\mathcal T_t(\delta)\): supervision region containing at least \(1-\delta\) of training inputs.</li>
+        <li>\(w_t(\delta)\): shell-width bound from Gaussian concentration.</li>
+        <li>When shells barely overlap, one softmax weight dominates.</li>
+      </ul>
+      <div class="formula compact">\[
+        s_\star(x,t)\approx-\frac{x-a_t x_0^{(i)}}{b_t^2}
+      \]</div>
+      <p class="muted">Inside the \(i\)-th shell, the empirical score mainly points to training sample \(x_0^{(i)}\).</p>
+    </div>
+  </div>
+  <p class="paper-caption">Figure: Song et al., selective-underfitting schematic.</p>
+</section>
+
+<section class="slide compact" data-title="Inference extrapolation">
+  <div class="eyebrow">16 · Off-shell inference</div>
+  <h2>Free generation leaves the high-probability training region early</h2>
+  <div class="grid-2 wide-right">
+    <div class="card">
+      <div class="formula compact">\[
+        r^{(i)}(x,t)=\frac{\|x-a_t x_0^{(i)}\|}{b_t\sqrt d},
+        \qquad r_\star= r^{(i_\star)},\quad i_\star=\arg\min_i|r^{(i)}-1|
+      \]</div>
+      <ul class="clean-list">
+        <li>\(r_\star\approx1\): the point lies near at least one supervision shell.</li>
+        <li>Training inputs remain concentrated near one.</li>
+        <li>Inference trajectories rapidly move to \(r_\star>1\).</li>
+      </ul>
+      <div class="callout cool">The model is queried where the empirical score received almost no direct probability-weighted supervision.</div>
+    </div>
+    <div class="figure-card"><img src="assets/figures/selective-underfitting/extrapolation-distance.png" alt="Distance of training and inference points from supervision shells" /></div>
+  </div>
+  <p class="paper-caption">Figure: Song et al., training versus inference distance from the supervision region.</p>
+</section>
+
+<section class="slide compact" data-title="Selective underfitting evidence">
+  <div class="eyebrow">17 · Contrastive scaling</div>
+  <h2>Larger models fit the empirical score on-shell—but deviate more off-shell</h2>
+  <div class="grid-2 wide-left">
+    <div class="figure-card"><img src="assets/figures/selective-underfitting/contrastive-scaling.png" alt="Selective underfitting contrastive scaling plot" /></div>
+    <div class="card">
+      <div class="formula compact">\[
+        s_\theta(x,t)\approx
+        \begin{cases}
+        s_\star(x,t),&x\in\mathcal T_t(\delta),\\
+        \text{learned extrapolation},&x\notin\mathcal T_t(\delta).
+        \end{cases}
+      \]</div>
+      <ul class="clean-list">
+        <li>Underfitting is measured by \(\|s_\theta-s_\star\|^2\).</li>
+        <li>Across SiT model scales, supervision-region error decreases.</li>
+        <li>Extrapolation-region deviation from the empirical score increases.</li>
+      </ul>
+      <div class="callout">This is not global underfitting. It is <strong>region-selective fitting and deviation</strong>.</div>
+    </div>
+  </div>
+  <p class="paper-caption">Figure: Song et al., quantitative evidence for selective underfitting.</p>
+</section>
+
+<section class="slide compact" data-title="On-shell memorization">
+  <div class="eyebrow">18 · Same model, different starting region</div>
+  <h2>Starting from a noised training image reveals memorization inside the supervision region</h2>
+  <div class="figure-pair">
+    <div class="figure-card"><img src="assets/figures/selective-underfitting/phase-transition-example.png" alt="Denoising a noised training image back to the original" /></div>
+    <div class="figure-card"><img src="assets/figures/selective-underfitting/phase-transition-plot.png" alt="Memorization ratio and shell overlap across time" /></div>
+  </div>
+  <div class="grid-2">
+    <article class="card soft"><h3 class="rose">On-shell initialization</h3><p class="muted">A noised training image is denoised back to its original training sample over a broad low-noise range.</p></article>
+    <article class="card soft"><h3 class="green">Free initialization</h3><p class="muted">A Gaussian-noise trajectory moves off-shell and follows a different learned vector field.</p></article>
+  </div>
+  <p class="paper-caption">Figure: Song et al., memorization phase transition from noisy training examples.</p>
+</section>
+
+<section class="slide compact" data-title="Freedom of extrapolation">
+  <div class="eyebrow">19 · Controlled intervention</div>
+  <h2>Broaden the supervision region while fixing the target score—and generalization degrades</h2>
+  <div class="figure-triptych">
+    <div class="figure-card"><img src="assets/figures/selective-underfitting/foe-generalization.png" alt="Small supervision region gives freedom to extrapolate" /></div>
+    <div class="figure-card"><img src="assets/figures/selective-underfitting/foe-memorization.png" alt="Large supervision region limits extrapolation" /></div>
+    <div class="figure-card"><img src="assets/figures/selective-underfitting/foe-plot.png" alt="Memorization increases as supervision region grows" /></div>
+  </div>
+  <div class="formula compact">\[
+    \mathcal D_{\mathrm{score}}\ \text{fixed},\qquad
+    \mathcal D_{\mathrm{region}}\ \text{varied},\qquad
+    \mathcal D_{\mathrm{score}}\subseteq\mathcal D_{\mathrm{region}}
+  \]</div>
+  <div class="symbols">
+    <span class="symbol"><b>\(\mathcal D_{\mathrm{score}}\)</b> samples defining the empirical target score</span>
+    <span class="symbol"><b>\(\mathcal D_{\mathrm{region}}\)</b> samples defining where training inputs are drawn</span>
+  </div>
+  <p class="paper-caption">Figure: Song et al., freedom-of-extrapolation intervention.</p>
+</section>
+
+<section class="slide compact" data-title="Unified view">
+  <div class="eyebrow">20 · Synthesis</div>
+  <h2>Preserve coarse structure; avoid sample-specific attraction</h2>
+  <div class="grid-2">
+    <div class="figure-card short"><img src="assets/figures/dynamical-regimes/recap.png" alt="Dynamical regimes recap" /></div>
+    <div class="figure-card short"><img src="assets/figures/selective-underfitting/extrapolation-illustration.png" alt="Selective underfitting recap" /></div>
+  </div>
+  <div class="grid-3">
+    <article class="card"><div class="number">1</div><h3>Spectral structure</h3><p class="muted">Large population-level directions become visible at speciation.</p></article>
+    <article class="card"><div class="number">2</div><h3>Exact-score collapse</h3><p class="muted">At low noise, a single empirical component can dominate the density.</p></article>
+    <article class="card"><div class="number">3</div><h3>Learned escape</h3><p class="muted">Practical trajectories move off-shell, where the score is shaped by extrapolation rather than direct empirical supervision.</p></article>
+  </div>
+  <div class="callout cool">A successful model can retain enough coarse score structure to <strong>speciate</strong>, while deviating before sample-level empirical attraction forces <strong>collapse</strong>.</div>
+</section>
+
+<section class="slide" data-title="Takeaways">
+  <div class="eyebrow">21 · Takeaways</div>
+  <h2>What the two papers explain together</h2>
+  <div class="grid-3">
+    <article class="card"><div class="number">A</div><h3>Exact score is not enough</h3><p class="muted">It gives a useful middle regime, but its exact endpoint is memorization.</p></article>
+    <article class="card"><div class="number">B</div><h3>Two transitions, two mechanisms</h3><p class="muted">Speciation is covariance-driven; collapse is entropy- and coverage-driven.</p></article>
+    <article class="card"><div class="number">C</div><h3>Generalization is off-shell</h3><p class="muted">Novel generation depends on how architecture and training shape the score outside the supervision region.</p></article>
+  </div>
+  <div class="formula">\[
+    \text{Open problem: predict and control }s_\theta(x,t)\text{ for }x\notin\mathcal T_t(\delta).
+  \]</div>
+  <p class="hero-copy">Use ← / →, PageUp / PageDown, space, swipe, or the controls below.</p>
+</section>
+
+</main>
+<footer class="footer" aria-label="Presentation controls">
+  <span id="sectionName">Title</span>
+  <div class="progress-track" aria-hidden="true"><div class="progress-bar" id="progressBar"></div></div>
+  <div class="controls"><button id="prev" type="button" aria-label="Previous slide">←</button><button id="next" type="button" aria-label="Next slide">→</button></div>
+  <span class="slide-no" id="slideNo">01 / 22</span>
+</footer>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+<script defer src="assets/slides.js"></script>
 </body>
 </html>
