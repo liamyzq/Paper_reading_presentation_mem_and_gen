@@ -1,95 +1,23 @@
-const slides = [...document.querySelectorAll('.slide')];
-const progressBar = document.getElementById('progressBar');
-const slideNo = document.getElementById('slideNo');
-const sectionName = document.getElementById('sectionName');
-let current = 0;
-let touchStartX = null;
+(async () => {
+  try {
+    const response = await fetch('.build/slides.js.gz.b64', { cache: 'no-store' });
+    if (!response.ok) throw new Error(`Could not load revised presentation source: ${response.status}`);
 
-function applyFinalPolish() {
-  const onShell = slides.find((slide) => slide.dataset.title === 'On-shell memorization');
-  if (onShell) {
-    onShell.classList.add('tight-figure');
-    const title = onShell.querySelector('h2');
-    if (title) title.textContent = 'Noised training images reveal on-shell memorization';
+    const base64 = (await response.text()).trim();
+    const compressed = Uint8Array.from(atob(base64), (character) => character.charCodeAt(0));
+
+    if (typeof DecompressionStream !== 'function') {
+      throw new Error('This browser does not support gzip DecompressionStream. Please use a current Chrome, Edge, Firefox, or Safari version.');
+    }
+
+    const stream = new Blob([compressed]).stream().pipeThrough(new DecompressionStream('gzip'));
+    const source = await new Response(stream).text();
+    (0, eval)(source);
+  } catch (error) {
+    console.error(error);
+    const notice = document.createElement('div');
+    notice.style.cssText = 'position:fixed;inset:18px 18px auto;z-index:9999;padding:14px 18px;border:1px solid #ff91a5;border-radius:12px;background:#24111a;color:#ffe8ed;font:16px/1.4 system-ui';
+    notice.textContent = `Presentation revision failed to load: ${error.message}`;
+    document.body.appendChild(notice);
   }
-
-  const synthesis = slides.find((slide) => slide.dataset.title === 'Unified view');
-  if (synthesis) {
-    synthesis.classList.add('synthesis');
-    const title = synthesis.querySelector('h2');
-    if (title) title.textContent = 'Coarse structure without sample-specific collapse';
-  }
-
-  const style = document.createElement('style');
-  style.dataset.presentationPolish = 'true';
-  style.textContent = `
-    .slide.tight-figure h2 { font-size: clamp(29px,3.08vw,50px); }
-    .slide.tight-figure .figure-pair .figure-card img { max-height: 39vh; }
-    .slide.tight-figure .grid-2 { gap: 10px; }
-    .slide.synthesis { gap: 8px; padding-top: 24px; padding-bottom: 62px; }
-    .slide.synthesis h2 { font-size: clamp(29px,3vw,48px); }
-    .slide.synthesis .figure-card.short img { max-height: 27vh; }
-    .slide.synthesis .card { padding: 13px 17px; }
-    .slide.synthesis .card p { font-size: clamp(13px,.98vw,18px); }
-    .slide.synthesis .callout { padding: 13px 18px; font-size: clamp(16px,1.3vw,23px); }
-  `;
-  document.head.appendChild(style);
-}
-
-function showSlide(nextIndex) {
-  const normalized = (nextIndex + slides.length) % slides.length;
-  slides.forEach((slide, index) => {
-    slide.classList.toggle('active', index === normalized);
-    slide.classList.toggle('leaving', index < normalized);
-    slide.setAttribute('aria-hidden', index === normalized ? 'false' : 'true');
-  });
-  current = normalized;
-  progressBar.style.width = `${((current + 1) / slides.length) * 100}%`;
-  slideNo.textContent = `${String(current + 1).padStart(2, '0')} / ${String(slides.length).padStart(2, '0')}`;
-  sectionName.textContent = slides[current].dataset.title || '';
-  history.replaceState(null, '', `#${current + 1}`);
-}
-
-document.getElementById('prev').addEventListener('click', () => showSlide(current - 1));
-document.getElementById('next').addEventListener('click', () => showSlide(current + 1));
-document.addEventListener('keydown', (event) => {
-  if (['ArrowRight', 'PageDown', ' '].includes(event.key)) {
-    event.preventDefault();
-    showSlide(current + 1);
-  }
-  if (['ArrowLeft', 'PageUp'].includes(event.key)) {
-    event.preventDefault();
-    showSlide(current - 1);
-  }
-  if (event.key === 'Home') showSlide(0);
-  if (event.key === 'End') showSlide(slides.length - 1);
-});
-document.addEventListener('touchstart', (event) => {
-  touchStartX = event.changedTouches[0].screenX;
-}, { passive: true });
-document.addEventListener('touchend', (event) => {
-  if (touchStartX === null) return;
-  const delta = event.changedTouches[0].screenX - touchStartX;
-  if (Math.abs(delta) > 45) showSlide(current + (delta < 0 ? 1 : -1));
-  touchStartX = null;
-}, { passive: true });
-
-window.addEventListener('DOMContentLoaded', () => {
-  applyFinalPolish();
-  const requested = Number.parseInt(location.hash.slice(1), 10);
-  showSlide(Number.isFinite(requested) ? requested - 1 : 0);
-});
-
-window.addEventListener('load', () => {
-  if (window.renderMathInElement) {
-    renderMathInElement(document.body, {
-      delimiters: [
-        { left: '$$', right: '$$', display: true },
-        { left: '\\[', right: '\\]', display: true },
-        { left: '\\(', right: '\\)', display: false }
-      ],
-      throwOnError: false,
-      strict: false
-    });
-  }
-});
+})();
