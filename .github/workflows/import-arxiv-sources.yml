@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - .github/workflows/import-arxiv-sources.yml
+  issues:
+    types: [opened]
   workflow_dispatch:
 
 permissions:
@@ -12,6 +14,7 @@ permissions:
 
 jobs:
   import-sources:
+    if: github.event_name != 'issues' || github.event.issue.title == '[automation] import arXiv sources'
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -85,7 +88,6 @@ jobs:
             "arXiv non-exclusive distribution license" \
             "https://arxiv.org/licenses/nonexclusive-distrib/1.0/"
 
-          # Be polite to the arXiv export service.
           sleep 5
 
           import_source \
