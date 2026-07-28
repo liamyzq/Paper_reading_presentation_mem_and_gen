@@ -1,0 +1,121 @@
+name: Import arXiv source packages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/import-arxiv-sources.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  import-sources:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download and extract official arXiv source packages
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          import_source() {
+            local arxiv_id="$1"
+            local slug="$2"
+            local title="$3"
+            local license_name="$4"
+            local license_url="$5"
+            local out="papers/${slug}"
+            local archive="${out}/arxiv-${arxiv_id}-source.tar.gz"
+
+            rm -rf "${out}"
+            mkdir -p "${out}/source"
+
+            echo "Downloading ${title} (${arxiv_id})"
+            curl --location --fail --show-error \
+              --retry 5 --retry-delay 4 --retry-all-errors \
+              --user-agent "Paper_reading_presentation_mem_and_gen/1.0" \
+              "https://export.arxiv.org/e-print/${arxiv_id}" \
+              --output "${archive}"
+
+            if tar -tzf "${archive}" >/dev/null 2>&1; then
+              tar -xzf "${archive}" -C "${out}/source"
+            elif tar -tf "${archive}" >/dev/null 2>&1; then
+              tar -xf "${archive}" -C "${out}/source"
+            elif gzip -t "${archive}" >/dev/null 2>&1; then
+              gunzip -c "${archive}" > "${out}/source/main.tex"
+            else
+              echo "Unsupported arXiv source format for ${arxiv_id}" >&2
+              file "${archive}" >&2 || true
+              exit 1
+            fi
+
+            find "${out}/source" -type f -name '.DS_Store' -delete
+
+            cat > "${out}/README.md" <<EOF
+          # ${title}
+
+          - arXiv: https://arxiv.org/abs/${arxiv_id}
+          - Official source endpoint: https://export.arxiv.org/e-print/${arxiv_id}
+          - Imported version: v1
+          - License shown by arXiv: ${license_name}
+          - License URL: ${license_url}
+
+          The original source archive is kept as \`arxiv-${arxiv_id}-source.tar.gz\`.
+          Its contents are extracted under \`source/\` so figures and TeX files can be reused while preparing the presentation.
+
+          No source files have been modified during import. Preserve author attribution and check the applicable license before redistributing or adapting figures.
+          EOF
+
+            (
+              cd "${out}"
+              find source -type f -print | LC_ALL=C sort > SOURCE_MANIFEST.txt
+            )
+          }
+
+          import_source \
+            "2402.18491v1" \
+            "dynamical-regimes" \
+            "Dynamical Regimes of Diffusion Models" \
+            "arXiv non-exclusive distribution license" \
+            "https://arxiv.org/licenses/nonexclusive-distrib/1.0/"
+
+          # Be polite to the arXiv export service.
+          sleep 5
+
+          import_source \
+            "2510.01378v1" \
+            "selective-underfitting" \
+            "Selective Underfitting in Diffusion Models" \
+            "CC BY 4.0" \
+            "https://creativecommons.org/licenses/by/4.0/"
+
+          cat > papers/README.md <<'EOF'
+          # Imported paper sources
+
+          This directory contains the official arXiv v1 source packages used to prepare the joint presentation.
+
+          - `dynamical-regimes/` — arXiv:2402.18491v1
+          - `selective-underfitting/` — arXiv:2510.01378v1
+
+          Each paper directory contains the untouched downloaded archive, an extracted `source/` tree, a file manifest, and license/source metadata.
+          EOF
+
+      - name: Commit imported sources to main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add papers
+          if git diff --cached --quiet; then
+            echo "No source changes to commit."
+            exit 0
+          fi
+          git commit -m "Import official arXiv source packages"
+          git push origin HEAD:main
