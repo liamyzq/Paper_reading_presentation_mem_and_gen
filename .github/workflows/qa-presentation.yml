@@ -4,13 +4,17 @@ on:
   workflow_dispatch:
   issues:
     types: [opened]
+  push:
+    branches: [main]
+    paths:
+      - .build/qa-trigger.txt
 
 permissions:
   contents: write
 
 jobs:
   qa:
-    if: github.event_name == 'workflow_dispatch' || github.event.issue.title == '[automation] qa presentation slides'
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push' || github.event.issue.title == '[automation] qa presentation slides'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
