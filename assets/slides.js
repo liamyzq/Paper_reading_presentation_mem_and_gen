@@ -1,6 +1,6 @@
 (async () => {
   try {
-    const response = await fetch('.build/slides.js.gz.b64', { cache: 'no-store' });
+    const response = await fetch('assets/slides-v2.js.gz.b64', { cache: 'no-store' });
     if (!response.ok) throw new Error(`Could not load revised presentation source: ${response.status}`);
 
     const base64 = (await response.text()).trim();
