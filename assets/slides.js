@@ -15,6 +15,7 @@
 
     await loadCompressedScript('assets/slides-v3.js.gz.b64');
     await loadCompressedScript('assets/speciation-v4-patch.js.gz.b64');
+    await loadCompressedScript('assets/speciation-v5-projected-score.js.gz.b64');
   } catch (error) {
     console.error(error);
     const notice = document.createElement('div');
