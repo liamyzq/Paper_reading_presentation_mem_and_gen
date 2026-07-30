@@ -119,7 +119,7 @@ window.__DECK_HTML_PARTS.push(String.raw`
     </article>
   </div>
 
-  <p class="paper-caption">Research hypothesis, not a claim proved by either paper: representation learning may reduce memorization both by delaying sample-level collapse and by making inference-visited regions easier to model.</p>
+  <p class="paper-caption">Research hypothesis, not a claim proved by either paper: representation learning may reduce memorization by pushing sample-level collapse later along reverse sampling (equivalently \(t_C\) toward \(0\)) and by making inference-visited regions easier to model.</p>
   <div class="jump-row"><button class="jump-link" data-jump="Appendix">Open technical appendix →</button></div>
 </section>
 
