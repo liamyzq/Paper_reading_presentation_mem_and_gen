@@ -8,6 +8,32 @@ if (!deck || htmlParts.length !== 10) {
 deck.innerHTML = htmlParts.join('');
 delete window.__DECK_HTML_PARTS;
 
+const localFigureMap = {
+  'assets/figures/dynamical-regimes/recap.png': 'assets/figures/dynamical-regimes/recap.svg',
+  'assets/figures/dynamical-regimes/speciation-real.png': 'assets/figures/dynamical-regimes/speciation-real.svg',
+  'assets/figures/dynamical-regimes/collapse-real.png': 'assets/figures/dynamical-regimes/collapse-real.svg',
+  'assets/figures/selective-underfitting/extrapolation-illustration.png': 'assets/figures/selective-underfitting/extrapolation-illustration.svg',
+  'assets/figures/selective-underfitting/extrapolation-distance.png': 'assets/figures/selective-underfitting/extrapolation-distance.svg',
+  'assets/figures/selective-underfitting/contrastive-scaling.png': 'assets/figures/selective-underfitting/contrastive-scaling.svg',
+  'assets/figures/selective-underfitting/phase-transition-example.png': 'assets/figures/selective-underfitting/phase-transition-example.svg',
+  'assets/figures/selective-underfitting/phase-transition-plot.png': 'assets/figures/selective-underfitting/phase-transition-plot.svg',
+  'assets/figures/selective-underfitting/foe-generalization.png': 'assets/figures/selective-underfitting/foe-generalization.svg',
+  'assets/figures/selective-underfitting/foe-memorization.png': 'assets/figures/selective-underfitting/foe-memorization.svg',
+  'assets/figures/selective-underfitting/foe-plot.png': 'assets/figures/selective-underfitting/foe-plot.svg'
+};
+
+deck.querySelectorAll('img[src]').forEach((image) => {
+  const source = image.getAttribute('src');
+  if (localFigureMap[source]) image.setAttribute('src', localFigureMap[source]);
+});
+
+const overviewCaption = [...deck.querySelectorAll('.slide')]
+  .find((slide) => slide.dataset.title === 'Exact reverse dynamics')
+  ?.querySelector('.paper-caption');
+if (overviewCaption) {
+  overviewCaption.textContent = 'Schematic reconstruction adapted from Biroli et al., Fig. 1.';
+}
+
 const slides = [...document.querySelectorAll('.slide')];
 const progressBar = document.getElementById('progressBar');
 const slideNo = document.getElementById('slideNo');
