@@ -36,6 +36,18 @@ function closeFigure() {
   lightboxImage.removeAttribute('src');
 }
 
+deck.querySelectorAll('.slide img[src]').forEach((image) => {
+  if (image.closest('[data-zoom-src]')) return;
+
+  image.classList.add('zoomable-figure');
+  image.setAttribute('tabindex', '0');
+  image.setAttribute('role', 'button');
+  image.setAttribute('aria-label', `Enlarge figure: ${image.alt || 'presentation figure'}`);
+
+  const frame = image.closest('.figure-card');
+  if (frame) frame.classList.add('has-zoom');
+});
+
 function normalizeIndex(index) {
   return (index + slides.length) % slides.length;
 }
@@ -70,6 +82,13 @@ document.addEventListener('click', (event) => {
     return;
   }
 
+  const zoomImage = event.target.closest('img.zoomable-figure');
+  if (zoomImage) {
+    event.preventDefault();
+    openFigure(zoomImage.currentSrc || zoomImage.getAttribute('src'), zoomImage.alt || '');
+    return;
+  }
+
   if (event.target === figureLightbox || event.target.closest('.figure-lightbox-close')) {
     closeFigure();
     return;
@@ -86,6 +105,14 @@ document.addEventListener('keydown', (event) => {
     closeFigure();
     return;
   }
+
+  const zoomImage = event.target.closest?.('img.zoomable-figure');
+  if (zoomImage && ['Enter', ' '].includes(event.key)) {
+    event.preventDefault();
+    openFigure(zoomImage.currentSrc || zoomImage.getAttribute('src'), zoomImage.alt || '');
+    return;
+  }
+
   if (figureLightbox.classList.contains('open')) return;
   if (event.target.closest('button, a, input, textarea, select')) return;
 
