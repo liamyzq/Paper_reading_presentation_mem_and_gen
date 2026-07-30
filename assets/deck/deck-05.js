@@ -61,7 +61,7 @@ window.__DECK_HTML_PARTS.push(String.raw`
       \]</div>
       <div class="formula compact">\[
         s_\star(X_t,t)\approx-\frac{X_t-a_tx_0^{(1)}}{b_t^2}
-        \qquad \bigl(t<t_C\text{ along the backward trajectory}\bigr).
+        \qquad \bigl(t&lt;t_C\text{ along the backward trajectory}\bigr).
       \]</div>
       <p class="muted">At \(t_C\), the state is still noisy:</p>
       <div class="formula compact">\[
