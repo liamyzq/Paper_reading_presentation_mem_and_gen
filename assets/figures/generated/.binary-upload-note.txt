@@ -1,1 +1,0 @@
-Binary figure assets are added through Git blobs in the following commit.
