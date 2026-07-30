@@ -1,0 +1,217 @@
+.experiment-figure {
+  position: relative;
+}
+
+.figure-detail-trigger {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 6;
+  min-height: 38px;
+  padding: 8px 13px;
+  border: 1px solid rgba(121,196,255,.5);
+  border-radius: 999px;
+  background: rgba(7,16,31,.88);
+  color: #eef5ff;
+  font-size: clamp(15px, 1vw, 19px);
+  font-weight: 760;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(0,0,0,.28);
+}
+
+.figure-detail-trigger::after {
+  content: " ↗";
+  color: var(--cyan);
+}
+
+.figure-detail-trigger:hover,
+.figure-detail-trigger:focus-visible {
+  border-color: var(--cyan);
+  background: rgba(11,27,47,.96);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.experiment-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: none;
+  place-items: center;
+  padding: clamp(22px, 3.5vw, 58px);
+  background: rgba(3,8,17,.91);
+  backdrop-filter: blur(12px);
+}
+
+.experiment-lightbox.open {
+  display: grid;
+}
+
+.experiment-lightbox-panel {
+  position: relative;
+  width: min(94vw, 1220px);
+  max-height: 90vh;
+  overflow: auto;
+  padding: clamp(26px, 3vw, 46px);
+  border: 1px solid rgba(121,196,255,.3);
+  border-radius: 25px;
+  background:
+    radial-gradient(circle at 12% 10%, rgba(121,196,255,.11), transparent 30%),
+    linear-gradient(145deg, #10233b, #091526 70%);
+  color: var(--ink);
+  box-shadow: 0 30px 110px rgba(0,0,0,.58);
+  scrollbar-width: thin;
+}
+
+.experiment-lightbox-close {
+  position: sticky;
+  top: 0;
+  float: right;
+  z-index: 5;
+  width: 48px;
+  height: 48px;
+  margin: -8px -8px 4px 18px;
+  border: 1px solid rgba(255,255,255,.28);
+  border-radius: 999px;
+  background: rgba(7,16,31,.9);
+  color: #fff;
+  font-size: 30px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.experiment-lightbox-close:hover,
+.experiment-lightbox-close:focus-visible {
+  border-color: var(--blue);
+  outline: none;
+}
+
+.experiment-detail-header {
+  display: grid;
+  gap: 11px;
+  margin-bottom: clamp(19px, 2vw, 30px);
+}
+
+.experiment-detail-kicker {
+  color: var(--cyan);
+  font-size: clamp(15px, 1vw, 19px);
+  font-weight: 780;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.experiment-detail-header h2 {
+  max-width: 21ch;
+  font-size: clamp(34px, 3.4vw, 57px);
+  line-height: 1.02;
+  letter-spacing: -.04em;
+}
+
+.experiment-detail-header p {
+  max-width: 64ch;
+  color: var(--muted);
+  font-size: clamp(19px, 1.45vw, 27px);
+  line-height: 1.42;
+}
+
+.experiment-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap: clamp(14px, 1.5vw, 22px);
+}
+
+.experiment-detail-card {
+  min-width: 0;
+  padding: clamp(18px, 1.7vw, 27px);
+  border: 1px solid rgba(170,196,230,.18);
+  border-radius: 20px;
+  background: rgba(10,25,44,.78);
+}
+
+.experiment-detail-card h3 {
+  margin: 0 0 12px;
+  color: var(--blue);
+  font-size: clamp(23px, 1.75vw, 31px);
+}
+
+.experiment-detail-card p,
+.experiment-detail-card li {
+  color: var(--muted);
+  font-size: clamp(18px, 1.25vw, 23px);
+  line-height: 1.46;
+}
+
+.experiment-detail-card p + p {
+  margin-top: 10px;
+}
+
+.experiment-detail-card ul,
+.experiment-detail-card ol {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 1.25em;
+}
+
+.experiment-detail-card strong {
+  color: var(--ink);
+}
+
+.experiment-detail-formula {
+  margin: 12px 0;
+  padding: clamp(12px, 1.25vw, 19px);
+  overflow-x: auto;
+  border: 1px solid rgba(121,196,255,.2);
+  border-radius: 15px;
+  background: rgba(3,12,24,.68);
+  font-size: clamp(17px, 1.25vw, 23px);
+}
+
+.experiment-detail-formula .katex-display {
+  margin: 0;
+}
+
+.experiment-detail-insight,
+.experiment-detail-caveat {
+  margin-top: clamp(15px, 1.6vw, 23px);
+  padding: clamp(16px, 1.55vw, 24px);
+  border-left: 5px solid var(--cyan);
+  border-radius: 0 17px 17px 0;
+  background: rgba(99,227,217,.08);
+  color: #dcfffb;
+  font-size: clamp(19px, 1.35vw, 25px);
+  line-height: 1.43;
+}
+
+.experiment-detail-caveat {
+  border-left-color: var(--gold);
+  background: rgba(255,210,125,.08);
+  color: #fff1cf;
+}
+
+@media (max-width: 800px), (max-height: 680px) {
+  .figure-detail-trigger {
+    min-height: 34px;
+    padding: 7px 10px;
+  }
+
+  .experiment-lightbox {
+    align-items: start;
+    padding: 14px;
+  }
+
+  .experiment-lightbox-panel {
+    width: 100%;
+    max-height: calc(100vh - 28px);
+    padding: 24px 18px 34px;
+  }
+
+  .experiment-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .experiment-detail-header h2 {
+    max-width: none;
+  }
+}
