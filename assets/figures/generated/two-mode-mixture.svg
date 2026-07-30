@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 360">
+  <rect width="900" height="360" rx="28" fill="#fbfcff"/>
+  <defs>
+    <linearGradient id="blueFill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4f9cff" stop-opacity=".75"/>
+      <stop offset="1" stop-color="#4f9cff" stop-opacity=".08"/>
+    </linearGradient>
+    <linearGradient id="orangeFill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f3a24b" stop-opacity=".78"/>
+      <stop offset="1" stop-color="#f3a24b" stop-opacity=".08"/>
+    </linearGradient>
+    <filter id="blur"><feGaussianBlur stdDeviation="10"/></filter>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0 0 L0 6 L9 3 Z" fill="#64748b"/>
+    </marker>
+  </defs>
+  <text x="450" y="38" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#172033">Two-class Gaussian mixture</text>
+  <line x1="90" y1="286" x2="820" y2="286" stroke="#172033" stroke-width="3"/>
+  <path d="M105 286 C150 285 180 270 215 220 C250 165 280 82 335 82 C390 82 420 165 455 220 C490 270 520 285 560 286 Z" fill="url(#blueFill)" stroke="#4f9cff" stroke-width="5"/>
+  <path d="M340 286 C380 285 410 270 445 220 C480 165 510 82 565 82 C620 82 650 165 685 220 C720 270 750 285 795 286 Z" fill="url(#orangeFill)" stroke="#f3a24b" stroke-width="5"/>
+  <ellipse cx="335" cy="200" rx="95" ry="78" fill="#4f9cff" opacity=".09" filter="url(#blur)"/>
+  <ellipse cx="565" cy="200" rx="95" ry="78" fill="#f3a24b" opacity=".10" filter="url(#blur)"/>
+  <circle cx="335" cy="286" r="8" fill="#245fb8"/>
+  <circle cx="565" cy="286" r="8" fill="#b9671c"/>
+  <text x="335" y="326" text-anchor="middle" font-family="Arial, sans-serif" font-size="21" font-weight="700" fill="#245fb8">−m  (c = −1)</text>
+  <text x="565" y="326" text-anchor="middle" font-family="Arial, sans-serif" font-size="21" font-weight="700" fill="#b9671c">+m  (c = +1)</text>
+  <line x1="385" y1="54" x2="515" y2="54" stroke="#64748b" stroke-width="3" marker-end="url(#arrow)"/>
+  <text x="450" y="76" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" fill="#64748b">class-separating direction m</text>
+</svg>

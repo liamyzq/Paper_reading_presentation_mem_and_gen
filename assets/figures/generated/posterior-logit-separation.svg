@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 360">
+  <rect width="900" height="360" rx="28" fill="#fbfcff"/>
+  <style>
+    .title{font:700 22px Arial,sans-serif;fill:#172033}
+    .lab{font:700 19px Arial,sans-serif;fill:#172033}
+    .small{font:16px Arial,sans-serif;fill:#64748b}
+  </style>
+  <text x="450" y="34" text-anchor="middle" class="title">Conditional distributions of the posterior logit uₜ(Xₜ)</text>
+  <g transform="translate(35 58)">
+    <text x="125" y="20" text-anchor="middle" class="lab">δₜ ≪ 1</text>
+    <line x1="18" y1="228" x2="235" y2="228" stroke="#172033" stroke-width="2"/>
+    <path d="M25 228 C52 226 62 203 78 151 C94 98 112 72 130 72 C148 72 166 98 182 151 C198 203 208 226 232 228" fill="#4f9cff" fill-opacity=".23" stroke="#4f9cff" stroke-width="4"/>
+    <path d="M25 228 C52 226 62 203 78 151 C94 98 112 72 130 72 C148 72 166 98 182 151 C198 203 208 226 232 228" fill="#f08b4f" fill-opacity=".18" stroke="#f08b4f" stroke-width="4" stroke-dasharray="8 5"/>
+    <text x="125" y="257" text-anchor="middle" class="small">strong overlap</text>
+  </g>
+  <g transform="translate(325 58)">
+    <text x="125" y="20" text-anchor="middle" class="lab">δₜ ≈ 1</text>
+    <line x1="18" y1="228" x2="235" y2="228" stroke="#172033" stroke-width="2"/>
+    <path d="M18 228 C48 226 62 206 78 160 C94 112 110 82 126 82 C142 82 158 112 174 160 C190 206 204 226 230 228" fill="#4f9cff" fill-opacity=".25" stroke="#4f9cff" stroke-width="4" transform="translate(-28 0)"/>
+    <path d="M18 228 C48 226 62 206 78 160 C94 112 110 82 126 82 C142 82 158 112 174 160 C190 206 204 226 230 228" fill="#f08b4f" fill-opacity=".22" stroke="#f08b4f" stroke-width="4" transform="translate(28 0)"/>
+    <line x1="125" y1="72" x2="125" y2="232" stroke="#94a3b8" stroke-width="2" stroke-dasharray="6 6"/>
+    <text x="125" y="257" text-anchor="middle" class="small">sign becomes informative</text>
+  </g>
+  <g transform="translate(615 58)">
+    <text x="125" y="20" text-anchor="middle" class="lab">δₜ ≫ 1</text>
+    <line x1="18" y1="228" x2="235" y2="228" stroke="#172033" stroke-width="2"/>
+    <path d="M18 228 C45 226 56 204 68 155 C80 107 93 77 108 77 C123 77 136 107 148 155 C160 204 171 226 198 228" fill="#4f9cff" fill-opacity=".25" stroke="#4f9cff" stroke-width="4" transform="translate(-54 0)"/>
+    <path d="M18 228 C45 226 56 204 68 155 C80 107 93 77 108 77 C123 77 136 107 148 155 C160 204 171 226 198 228" fill="#f08b4f" fill-opacity=".22" stroke="#f08b4f" stroke-width="4" transform="translate(73 0)"/>
+    <line x1="125" y1="72" x2="125" y2="232" stroke="#94a3b8" stroke-width="2" stroke-dasharray="6 6"/>
+    <text x="125" y="257" text-anchor="middle" class="small">stable posterior sign</text>
+  </g>
+  <text x="450" y="343" text-anchor="middle" class="small">blue: c = −1    ·    orange: c = +1    ·    vertical reference: u = 0</text>
+</svg>
