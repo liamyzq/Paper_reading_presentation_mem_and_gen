@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 520" role="img" aria-labelledby="title desc">
+  <title id="title">Self versus crowd at low diffusion time</title>
+  <desc id="desc">A planted sample exerts one strong force on the current point, while many distant empirical samples exert weak crowd forces.</desc>
+  <defs>
+    <marker id="redArrow" markerWidth="12" markerHeight="12" refX="10" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#e34d59"/></marker>
+    <marker id="blueArrow" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#4f9cff"/></marker>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#17304d" flood-opacity=".16"/></filter>
+  </defs>
+  <rect x="8" y="8" width="744" height="504" rx="28" fill="#fbfcff" stroke="#dbe5f0" stroke-width="3" filter="url(#shadow)"/>
+  <text x="380" y="54" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="30" font-weight="750" fill="#172033">Small backward time: self dominates</text>
+  <circle cx="380" cy="296" r="86" fill="none" stroke="#ccd8e6" stroke-width="3" stroke-dasharray="8 8"/>
+  <circle cx="380" cy="296" r="13" fill="#111827"/>
+  <text x="397" y="321" font-family="Inter,Arial,sans-serif" font-size="22" fill="#172033">current state</text>
+  <path d="M380 98 L366 127 L334 132 L357 154 L351 186 L380 171 L409 186 L403 154 L426 132 L394 127 Z" fill="#e34d59" stroke="#ad2635" stroke-width="2"/>
+  <line x1="380" y1="183" x2="380" y2="276" stroke="#e34d59" stroke-width="10" marker-end="url(#redArrow)"/>
+  <text x="430" y="208" font-family="Inter,Arial,sans-serif" font-size="23" font-weight="700" fill="#c93443">self</text>
+  <text x="430" y="234" font-family="Inter,Arial,sans-serif" font-size="19" fill="#c93443">one strong force</text>
+  <g fill="#73b9ee" stroke="#276aa5" stroke-width="3">
+    <circle cx="170" cy="190" r="14"/><circle cx="128" cy="308" r="14"/><circle cx="196" cy="420" r="14"/>
+    <circle cx="570" cy="185" r="14"/><circle cx="632" cy="300" r="14"/><circle cx="556" cy="420" r="14"/>
+    <circle cx="300" cy="455" r="14"/><circle cx="472" cy="460" r="14"/>
+  </g>
+  <g stroke="#4f9cff" stroke-width="3" opacity=".55" marker-end="url(#blueArrow)">
+    <line x1="184" y1="199" x2="355" y2="282"/><line x1="143" y1="307" x2="350" y2="297"/><line x1="209" y1="410" x2="356" y2="312"/>
+    <line x1="557" y1="196" x2="405" y2="282"/><line x1="617" y1="300" x2="409" y2="298"/><line x1="544" y1="410" x2="404" y2="312"/>
+    <line x1="307" y1="442" x2="368" y2="320"/><line x1="465" y1="447" x2="394" y2="320"/>
+  </g>
+  <text x="548" y="474" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="21" font-weight="700" fill="#276aa5">crowd: many weak forces</text>
+  <text x="380" y="494" text-anchor="middle" font-family="Georgia,serif" font-size="27" font-style="italic" fill="#172033">Z_self  ≫  Z_crowd</text>
+</svg>
