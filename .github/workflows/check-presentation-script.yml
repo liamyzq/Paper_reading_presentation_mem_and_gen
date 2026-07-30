@@ -4,13 +4,17 @@ on:
   issues:
     types: [opened]
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .trigger-static-cleanup
 
 permissions:
   contents: write
 
 jobs:
   finalize:
-    if: github.event_name == 'workflow_dispatch' || github.event.issue.title == '[automation] check presentation script'
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch' || github.event.issue.title == '[automation] check presentation script'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -37,7 +41,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          rm -rf .build qa .cleanup .cleanup-probe
+          rm -rf .build qa .cleanup .cleanup-probe .trigger-static-cleanup
           rm -f assets/*.gz.b64
           rm -f .github/workflows/apply-presentation-source.yml
           rm -f .github/workflows/build-presentation.yml
