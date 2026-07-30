@@ -79,13 +79,47 @@ window.__DECK_HTML_PARTS.push(String.raw`
   <div class="grid-3"><article class="card"><div class="number">1</div><h3>Spectral structure</h3><p class="muted">Population directions become visible at speciation.</p></article><article class="card"><div class="number">2</div><h3>Exact-score collapse</h3><p class="muted">At low noise, one empirical component dominates.</p></article><article class="card"><div class="number">3</div><h3>Learned escape</h3><p class="muted">Off-shell trajectories follow learned extrapolation rather than exact sample attraction.</p></article></div>
 </section>
 
-<section class="slide" data-title="Takeaways">
+<section class="slide compact" data-title="Takeaways">
   <div class="eyebrow">24 · Takeaways</div>
   <h2>What the two papers explain together</h2>
-  <div class="grid-3"><article class="card"><div class="number">A</div><h3>Exact score is not enough</h3><p class="muted">It yields a useful middle regime, but its exact endpoint is memorization.</p></article><article class="card"><div class="number">B</div><h3>Two transitions</h3><p class="muted">Speciation is population-spectral; collapse is entropy- and coverage-driven.</p></article><article class="card"><div class="number">C</div><h3>Generalization is off-shell</h3><p class="muted">Novel generation depends on how the network extrapolates outside the supervision region.</p></article></div>
-  <div class="formula">\[
-    \text{Open problem: predict and control }s_\theta(x,t)\text{ for }x\notin\mathcal T_t(\delta).
-  \]</div>
+  <div class="grid-3">
+    <article class="card"><div class="number">A</div><h3>Exact score is not enough</h3><p class="muted">It yields a useful middle regime, but its exact endpoint is memorization.</p></article>
+    <article class="card"><div class="number">B</div><h3>Two transitions</h3><p class="muted">Speciation is population-spectral; collapse is entropy- and coverage-driven.</p></article>
+    <article class="card"><div class="number">C</div><h3>Generalization is off-shell</h3><p class="muted">Novel generation depends on how the network extrapolates outside the supervision region.</p></article>
+  </div>
+
+  <div class="definition-box"><strong>Two open intervention axes:</strong> the first follows directly from Selective Underfitting; the second is a proposed research direction suggested by combining both papers.</div>
+
+  <div class="grid-2">
+    <article class="card soft">
+      <h3 class="cyan">1 · Learn the off-shell field better</h3>
+      <p class="muted">Predict, supervise, or regularize the vector field on inference-visited states without simply forcing it to equal the finite-data empirical score everywhere.</p>
+      <div class="formula compact">\[
+        x_t^{\mathrm{inf}}\notin\mathcal T_t(\delta):
+        \qquad
+        s_\theta(x_t^{\mathrm{inf}},t)
+        \ \text{should be population-aware and dynamically stable}.
+      \]</div>
+      <p class="muted">Possible tools include trajectory-aware objectives, consistency constraints, population priors, or teacher signals targeted specifically at weakly supervised regions.</p>
+    </article>
+
+    <article class="card soft">
+      <h3 class="gold">2 · Redesign the data geometry</h3>
+      <p class="muted">Encode, project, or invertibly transform data before diffusion so that sparse, sample-specific directions are less memorization-prone and the off-shell field is smoother to learn.</p>
+      <div class="formula compact">\[
+        z=E(x):
+        \qquad
+        t_C^{(z)}\downarrow0
+        \ \Longrightarrow\
+        \text{shorter Regime III},
+        \qquad
+        \text{smoother off-shell geometry}.
+      \]</div>
+      <p class="muted">The design variables include effective dimension, covariance spectrum, mode separation, shell overlap, and rare-neighbor statistics—not merely compression quality.</p>
+    </article>
+  </div>
+
+  <p class="paper-caption">Research hypothesis, not a claim proved by either paper: representation learning may reduce memorization both by delaying sample-level collapse and by making inference-visited regions easier to model.</p>
   <div class="jump-row"><button class="jump-link" data-jump="Appendix">Open technical appendix →</button></div>
 </section>
 
